@@ -46,10 +46,13 @@ class PasswordManager
     public function addUserCredentials(string $email, string $rawPassword): void
     {
         $hash = $this->generator->generate($rawPassword);
-        $this->database->insert('User', [
-            'email' => $email,
-            'password' => $hash
-        ]);
+        $this->database->insert(
+            'User',
+            [
+                'email' => $email,
+                'password' => $hash
+            ]
+        );
     }
 
     /**
@@ -62,6 +65,12 @@ class PasswordManager
      */
     public function areValidUserCredentials(string $email, string $rawPassword): bool
     {
-        return true;
+        $user = $this->database->select(
+            'User',
+            [
+                'email' => $email
+            ]
+        );
+        return $this->generator->verify($rawPassword, $user['password']);
     }
 }

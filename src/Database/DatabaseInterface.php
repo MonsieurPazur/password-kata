@@ -20,4 +20,14 @@ interface DatabaseInterface
      * @param array $values column -> value array
      */
     public function insert(string $table, array $values): void;
+
+    /**
+     * Selects record(s) from table.
+     *
+     * @param string $table whitch table to select from
+     * @param array $where conditions to apply to query
+     *
+     * @return array whole matching record or empty array
+     */
+    public function select(string $table, array $where): array;
 }

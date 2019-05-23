@@ -6,6 +6,8 @@
 
 namespace App;
 
+use App\Database\DatabaseInterface;
+
 /**
  * Class PasswordManager
  *
@@ -14,6 +16,21 @@ namespace App;
 class PasswordManager
 {
     /**
+     * @var DatabaseInterface $database storage where we keep users
+     */
+    private $database;
+
+    /**
+     * PasswordManager constructor.
+     *
+     * @param DatabaseInterface $database
+     */
+    public function __construct(DatabaseInterface $database)
+    {
+        $this->database = $database;
+    }
+
+    /**
      * Stores user credentials in database.
      *
      * @param string $email user provided email
@@ -21,6 +38,10 @@ class PasswordManager
      */
     public function addUserCredentials(string $email, string $rawPassword): void
     {
+        $this->database->insert('User', [
+            'email' => $email,
+            'password' => $rawPassword
+        ]);
     }
 
     /**

@@ -7,8 +7,10 @@
 namespace Test;
 
 use App\Database\DatabaseInterface;
+use App\Email\EmailService;
 use App\PasswordGeneratorInterface;
 use App\PasswordManager;
+use App\TokenGeneratorInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionException;
@@ -26,17 +28,27 @@ class PasswordManagerTest extends TestCase
     private $database;
 
     /**
-     * @var MockObject|PasswordGeneratorInterface $generator mock
+     * @var MockObject|PasswordGeneratorInterface $passwordGenerator mock
      */
-    private $generator;
+    private $passwordGenerator;
 
     /**
-     * @var PasswordManager $manager object that we operate on
+     * @var MockObject|TokenGeneratorInterface $tokenGenerator mock
+     */
+    private $tokenGenerator;
+
+    /**
+     * @var MockObject|PasswordManager $manager object that we operate on
      */
     private $manager;
 
     /**
-     * Sets up database and password generator mocks.
+     * @var MockObject|EmailService $emailService mock
+     */
+    private $emailService;
+
+    /**
+     * Sets up mocks and PasswordManager for future tests.
      *
      * @throws ReflectionException
      */
@@ -45,10 +57,21 @@ class PasswordManagerTest extends TestCase
         $this->database = $this->getMockBuilder(DatabaseInterface::class)
             ->setMethods(['insert', 'select'])
             ->getMock();
-        $this->generator = $this->getMockBuilder(PasswordGeneratorInterface::class)
+        $this->passwordGenerator = $this->getMockBuilder(PasswordGeneratorInterface::class)
             ->setMethods(['generate', 'verify'])
             ->getMock();
-        $this->manager = new PasswordManager($this->generator, $this->database);
+        $this->tokenGenerator = $this->getMockBuilder(TokenGeneratorInterface::class)
+            ->setMethods(['get'])
+            ->getMock();
+        $this->emailService = $this->getMockBuilder(EmailService::class)
+            ->setMethods(['send'])
+            ->getMock();
+        $this->manager = new PasswordManager(
+            $this->passwordGenerator,
+            $this->tokenGenerator,
+            $this->database,
+            $this->emailService
+        );
     }
 
     /**
@@ -57,7 +80,7 @@ class PasswordManagerTest extends TestCase
     public function testStoreUserInDatabase()
     {
         // We expect generator to create secure salted password.
-        $this->generator->expects($this->once())
+        $this->passwordGenerator->expects($this->once())
             ->method('generate')
             ->with($this->equalTo('PaS5w0RD1'))
             ->willReturn('hashed_and_salted_PaS5w0RD1');
@@ -66,7 +89,7 @@ class PasswordManagerTest extends TestCase
         $this->database->expects($this->once())
             ->method('insert')
             ->with(
-                $this->equalTo('User'),
+                $this->equalTo('users'),
                 $this->equalTo(
                     [
                         'email' => 'example@example.com',
@@ -88,7 +111,7 @@ class PasswordManagerTest extends TestCase
         $this->database->expects($this->once())
             ->method('select')
             ->with(
-                $this->equalTo('User'),
+                $this->equalTo('users'),
                 $this->equalTo(
                     [
                         'email' => 'example@example.com'
@@ -103,7 +126,7 @@ class PasswordManagerTest extends TestCase
             );
 
         // Also his password should be fine.
-        $this->generator->expects($this->once())
+        $this->passwordGenerator->expects($this->once())
             ->method('verify')
             ->with(
                 $this->equalTo('PaS5w0RD1'),
@@ -115,5 +138,34 @@ class PasswordManagerTest extends TestCase
             'example@example.com',
             'PaS5w0RD1'
         ));
+    }
+
+    /**
+     * Tests sending reset emails.
+     */
+    public function testSendingResetEmail()
+    {
+        $this->tokenGenerator->expects($this->once())
+            ->method('get')
+            ->willReturn('random_token');
+        $this->emailService->expects($this->once())
+            ->method('send')
+            ->with(
+                $this->equalTo('example@example.com'),
+                $this->equalTo('reset_email'),
+                $this->equalTo(['token' => 'random_token'])
+            );
+        $this->database->expects($this->once())
+            ->method('insert')
+            ->with(
+                $this->equalTo('user_validation_links'),
+                $this->equalTo(
+                    [
+                        'email' => 'example@example.com',
+                        'token' => 'random_token'
+                    ]
+                )
+            );
+        $this->manager->sendResetEmail('example@example.com');
     }
 }

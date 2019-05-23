@@ -7,6 +7,7 @@
 namespace App;
 
 use App\Database\DatabaseInterface;
+use App\Email\EmailService;
 
 /**
  * Class PasswordManager
@@ -21,20 +22,38 @@ class PasswordManager
     private $database;
 
     /**
-     * @var PasswordGeneratorInterface $generator used to generate and verify passwords
+     * @var PasswordGeneratorInterface $passwordGenerator used to generate and verify passwords
      */
-    private $generator;
+    private $passwordGenerator;
+
+    /**
+     * @var TokenGeneratorInterface $tokenGenerator used to generate random tokens
+     */
+    private $tokenGenerator;
+
+    /**
+     * @var EmailService $emailService used to send emails
+     */
+    private $emailService;
 
     /**
      * PasswordManager constructor.
      *
-     * @param PasswordGeneratorInterface $generator
+     * @param PasswordGeneratorInterface $passwordGenerator
+     * @param TokenGeneratorInterface $tokenGenerator
      * @param DatabaseInterface $database
+     * @param EmailService $emailService
      */
-    public function __construct(PasswordGeneratorInterface $generator, DatabaseInterface $database)
-    {
+    public function __construct(
+        PasswordGeneratorInterface $passwordGenerator,
+        TokenGeneratorInterface $tokenGenerator,
+        DatabaseInterface $database,
+        EmailService $emailService
+    ) {
+        $this->passwordGenerator = $passwordGenerator;
+        $this->tokenGenerator = $tokenGenerator;
         $this->database = $database;
-        $this->generator = $generator;
+        $this->emailService = $emailService;
     }
 
     /**
@@ -45,9 +64,9 @@ class PasswordManager
      */
     public function addUserCredentials(string $email, string $rawPassword): void
     {
-        $hash = $this->generator->generate($rawPassword);
+        $hash = $this->passwordGenerator->generate($rawPassword);
         $this->database->insert(
-            'User',
+            'users',
             [
                 'email' => $email,
                 'password' => $hash
@@ -66,11 +85,35 @@ class PasswordManager
     public function areValidUserCredentials(string $email, string $rawPassword): bool
     {
         $user = $this->database->select(
-            'User',
+            'users',
             [
                 'email' => $email
             ]
         );
-        return $this->generator->verify($rawPassword, $user['password']);
+        return $this->passwordGenerator->verify($rawPassword, $user['password']);
+    }
+
+    /**
+     * Sends email via emailService for resetting password.
+     *
+     * @param string $email where to
+     */
+    public function sendResetEmail(string $email)
+    {
+        $token = $this->tokenGenerator->get();
+        $this->emailService->send(
+            $email,
+            EmailService::EVENT_RESET_EMAIL,
+            [
+                'token' => $token
+            ]
+        );
+        $this->database->insert(
+            'user_validation_links',
+            [
+                'email' => $email,
+                'token' => $token
+            ]
+        );
     }
 }

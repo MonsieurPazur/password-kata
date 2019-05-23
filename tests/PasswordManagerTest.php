@@ -7,6 +7,7 @@
 namespace Test;
 
 use App\Database\DatabaseInterface;
+use App\PasswordGeneratorInterface;
 use App\PasswordManager;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -25,6 +26,11 @@ class PasswordManagerTest extends TestCase
     private $database;
 
     /**
+     * @var MockObject|PasswordGeneratorInterface $generator mock
+     */
+    private $generator;
+
+    /**
      * @var PasswordManager $manager object that we operate on
      */
     private $manager;
@@ -37,7 +43,10 @@ class PasswordManagerTest extends TestCase
         $this->database = $this->getMockBuilder(DatabaseInterface::class)
             ->setMethods(['insert'])
             ->getMock();
-        $this->manager = new PasswordManager($this->database);
+        $this->generator = $this->getMockBuilder(PasswordGeneratorInterface::class)
+            ->setMethods(['generate', 'verify'])
+            ->getMock();
+        $this->manager = new PasswordManager($this->generator, $this->database);
     }
 
     /**
@@ -50,10 +59,14 @@ class PasswordManagerTest extends TestCase
     }
 
     /**
-     * Tests storing user in database.
+     * Tests storing user (with proper password) in database.
      */
     public function testStoreUserInDatabase()
     {
+        $this->generator->expects($this->once())
+            ->method('generate')
+            ->with($this->equalTo('PaS5w0RD1'))
+            ->willReturn('hashed_and_salted_PaS5w0RD1');
         $this->database->expects($this->once())
             ->method('insert')
             ->with(
@@ -61,7 +74,7 @@ class PasswordManagerTest extends TestCase
                 $this->equalTo(
                     [
                         'email' => 'example@example.com',
-                        'password' => 'PaS5w0RD1'
+                        'password' => 'hashed_and_salted_PaS5w0RD1'
                     ]
                 )
             );

@@ -21,13 +21,20 @@ class PasswordManager
     private $database;
 
     /**
+     * @var PasswordGeneratorInterface $generator used to generate and verify passwords
+     */
+    private $generator;
+
+    /**
      * PasswordManager constructor.
      *
+     * @param PasswordGeneratorInterface $generator
      * @param DatabaseInterface $database
      */
-    public function __construct(DatabaseInterface $database)
+    public function __construct(PasswordGeneratorInterface $generator, DatabaseInterface $database)
     {
         $this->database = $database;
+        $this->generator = $generator;
     }
 
     /**
@@ -38,14 +45,15 @@ class PasswordManager
      */
     public function addUserCredentials(string $email, string $rawPassword): void
     {
+        $hash = $this->generator->generate($rawPassword);
         $this->database->insert('User', [
             'email' => $email,
-            'password' => $rawPassword
+            'password' => $hash
         ]);
     }
 
     /**
-     * Checks whether provided user is valid (email and password check out)
+     * Checks whether provided user is valid (email and password check out).
      *
      * @param string $email user provided email
      * @param string $rawPassword user provided password

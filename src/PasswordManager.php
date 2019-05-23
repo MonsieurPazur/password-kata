@@ -8,6 +8,8 @@ namespace App;
 
 use App\Database\DatabaseInterface;
 use App\Email\EmailService;
+use DateTime;
+use Exception;
 
 /**
  * Class PasswordManager
@@ -97,10 +99,13 @@ class PasswordManager
      * Sends email via emailService for resetting password.
      *
      * @param string $email where to
+     *
+     * @throws Exception
      */
     public function sendResetEmail(string $email)
     {
         $token = $this->tokenGenerator->get();
+        $expiresAt = $this->getResetEmailTokenExpiresAt();
         $this->emailService->send(
             $email,
             EmailService::EVENT_RESET_EMAIL,
@@ -112,8 +117,38 @@ class PasswordManager
             'user_validation_links',
             [
                 'email' => $email,
-                'token' => $token
+                'token' => $token,
+                'expires_at' => $expiresAt
             ]
         );
+    }
+
+    /**
+     * Gets current Datetime.
+     *
+     * @return string current date and time in ISO format
+     *
+     * @throws Exception
+     */
+    protected function getDateTime(): string
+    {
+        $dateTime = new DateTime();
+
+        // Convert to ISO8601 format.
+        return $dateTime->format('Y-m-d H:i');
+    }
+
+    /**
+     * Gets reset email token expire date.
+     *
+     * @return string token's expire date
+     *
+     * @throws Exception
+     */
+    private function getResetEmailTokenExpiresAt(): string
+    {
+        $dateTime = new DateTime($this->getDateTime());
+        $dateTime->modify('+1 hour');
+        return $dateTime->format('Y-m-d H:i');
     }
 }

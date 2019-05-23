@@ -11,6 +11,7 @@ use App\Email\EmailService;
 use App\PasswordGeneratorInterface;
 use App\PasswordManager;
 use App\TokenGeneratorInterface;
+use Exception;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionException;
@@ -57,15 +58,19 @@ class PasswordManagerTest extends TestCase
         $this->database = $this->getMockBuilder(DatabaseInterface::class)
             ->setMethods(['insert', 'select'])
             ->getMock();
+
         $this->passwordGenerator = $this->getMockBuilder(PasswordGeneratorInterface::class)
             ->setMethods(['generate', 'verify'])
             ->getMock();
+
         $this->tokenGenerator = $this->getMockBuilder(TokenGeneratorInterface::class)
             ->setMethods(['get'])
             ->getMock();
+
         $this->emailService = $this->getMockBuilder(EmailService::class)
             ->setMethods(['send'])
             ->getMock();
+
         $this->manager = new PasswordManager(
             $this->passwordGenerator,
             $this->tokenGenerator,
@@ -142,12 +147,32 @@ class PasswordManagerTest extends TestCase
 
     /**
      * Tests sending reset emails.
+     *
+     * @throws ReflectionException
+     * @throws Exception
      */
     public function testSendingResetEmail()
     {
+        // Mocking getDateTime() method.
+        $manager = $this->getMockBuilder(PasswordManager::class)
+            ->setConstructorArgs([
+                $this->passwordGenerator,
+                $this->tokenGenerator,
+                $this->database,
+                $this->emailService
+            ])
+            ->setMethods(['getDateTime'])
+            ->getMock();
+        $manager->expects($this->any())
+            ->method('getDateTime')
+            ->willReturn('2019-05-23 14:15');
+
+        // Mocking token generation.
         $this->tokenGenerator->expects($this->once())
             ->method('get')
             ->willReturn('random_token');
+
+        // Mocking sending email.
         $this->emailService->expects($this->once())
             ->method('send')
             ->with(
@@ -155,6 +180,8 @@ class PasswordManagerTest extends TestCase
                 $this->equalTo('reset_email'),
                 $this->equalTo(['token' => 'random_token'])
             );
+
+        // Mocking saving token to database.
         $this->database->expects($this->once())
             ->method('insert')
             ->with(
@@ -162,10 +189,13 @@ class PasswordManagerTest extends TestCase
                 $this->equalTo(
                     [
                         'email' => 'example@example.com',
-                        'token' => 'random_token'
+                        'token' => 'random_token',
+                        'expires_at' => '2019-05-23 15:15'
                     ]
                 )
             );
-        $this->manager->sendResetEmail('example@example.com');
+
+        /** @var PasswordManager $manager */
+        $manager->sendResetEmail('example@example.com');
     }
 }

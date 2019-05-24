@@ -56,7 +56,7 @@ class PasswordManagerTest extends TestCase
     protected function setUp(): void
     {
         $this->database = $this->getMockBuilder(DatabaseInterface::class)
-            ->setMethods(['insert', 'select'])
+            ->setMethods(['insert', 'select', 'query'])
             ->getMock();
 
         $this->passwordGenerator = $this->getMockBuilder(PasswordGeneratorInterface::class)
@@ -125,6 +125,7 @@ class PasswordManagerTest extends TestCase
             )
             ->willReturn(
                 [
+                    'id' => 1,
                     'email' => 'example@example.com',
                     'password' => 'hashed_and_salted_PaS5w0RD1'
                 ]
@@ -181,14 +182,33 @@ class PasswordManagerTest extends TestCase
                 $this->equalTo(['token' => 'random_token'])
             );
 
+        // Mocking getting user_id from users table.
+        $this->database->expects($this->once())
+            ->method('select')
+            ->with(
+                $this->equalTo('users'),
+                $this->equalTo(
+                    [
+                        'email' => 'example@example.com',
+                    ]
+                )
+            )
+            ->willReturn(
+                [
+                    'id' => 1,
+                    'email' => 'example@example.com',
+                    'password' => 'hashed_and_salted_PaS5w0RD1'
+                ]
+            );
+
         // Mocking saving token to database.
         $this->database->expects($this->once())
             ->method('insert')
             ->with(
-                $this->equalTo('user_validation_links'),
+                $this->equalTo('user_validation_tokens'),
                 $this->equalTo(
                     [
-                        'email' => 'example@example.com',
+                        'user_id' => 1,
                         'token' => 'random_token',
                         'expires_at' => '2019-05-23 15:15'
                     ]

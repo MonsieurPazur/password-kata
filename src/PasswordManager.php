@@ -113,10 +113,11 @@ class PasswordManager
                 'token' => $token
             ]
         );
+        $user = $this->database->select('users', ['email' => $email]);
         $this->database->insert(
-            'user_validation_links',
+            'user_validation_tokens',
             [
-                'email' => $email,
+                'user_id' => $user['id'],
                 'token' => $token,
                 'expires_at' => $expiresAt
             ]

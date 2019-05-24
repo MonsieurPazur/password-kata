@@ -30,4 +30,11 @@ interface DatabaseInterface
      * @return array whole matching record or empty array
      */
     public function select(string $table, array $where): array;
+
+    /**
+     * Runs raw query against database.
+     *
+     * @param string $query raw query to apply
+     */
+    public function query(string $query): void;
 }

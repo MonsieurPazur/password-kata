@@ -165,7 +165,7 @@ class PasswordManagerTest extends TestCase
             ->setMethods(['getDateTime'])
             ->getMock();
         $manager->method('getDateTime')
-            ->willReturn('2019-05-23 14:15');
+            ->willReturn('2019-05-23 14:15:00');
 
         // Mocking token generation.
         $this->tokenGenerator->expects($this->once())
@@ -209,7 +209,7 @@ class PasswordManagerTest extends TestCase
                     [
                         'user_id' => 1,
                         'token' => 'random_token',
-                        'expires_at' => '2019-05-23 15:15'
+                        'expires_at' => '2019-05-23 15:15:00'
                     ]
                 )
             );

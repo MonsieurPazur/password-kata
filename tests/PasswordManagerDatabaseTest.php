@@ -11,6 +11,7 @@ use App\Email\EmailService;
 use App\PasswordGeneratorInterface;
 use App\PasswordManager;
 use App\TokenGeneratorInterface;
+use Exception;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionException;
@@ -100,10 +101,71 @@ class PasswordManagerDatabaseTest extends TestCase
         // Check if data is actually in database.
         $result = $this->database->select('users', ['email' => 'example@example.com']);
         $expected = [
-            'id' => 1,
+            'id' => '1',
             'email' => 'example@example.com',
             'password' => 'hashed_and_salted_PaS5w0RD1'
         ];
+        $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * Tests sending reset emails.
+     *
+     * @throws ReflectionException
+     * @throws Exception
+     */
+    public function testSendingResetEmail(): void
+    {
+        // Mocking getDateTime() method.
+        $manager = $this->getMockBuilder(PasswordManager::class)
+            ->setConstructorArgs([
+                $this->passwordGenerator,
+                $this->tokenGenerator,
+                $this->database,
+                $this->emailService
+            ])
+            ->setMethods(['getDateTime'])
+            ->getMock();
+        $manager->method('getDateTime')
+            ->willReturn('2019-05-23 14:15:00');
+
+        // Mocking token generation.
+        $this->tokenGenerator->expects($this->once())
+            ->method('get')
+            ->willReturn('random_token');
+
+        // Mocking sending email.
+        $this->emailService->expects($this->once())
+            ->method('send')
+            ->with(
+                $this->equalTo('example@example.com'),
+                $this->equalTo('reset_email'),
+                $this->equalTo(['token' => 'random_token'])
+            );
+
+        // Creating sample user.
+        $this->database->insert(
+            'users',
+            [
+                'email' => 'example@example.com',
+                'password' => 'hashed_and_salted_PaS5w0RD1'
+            ]
+        );
+
+        /** @var PasswordManager $manager */
+        $manager->sendResetEmail('example@example.com');
+
+        // Getting user from database and getting token for that user.
+        $userId = $this->database->select('users', ['email' => 'example@example.com'])['id'];
+        $result = $this->database->select('user_validation_tokens', ['user_id' => $userId]);
+
+        $expected = [
+            'id' => '1',
+            'user_id' => '1',
+            'token' => 'random_token',
+            'expires_at' => '2019-05-23 15:15:00'
+        ];
+
         $this->assertEquals($expected, $result);
     }
 

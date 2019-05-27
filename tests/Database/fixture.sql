@@ -19,5 +19,5 @@ create table user_validation_tokens
 			references users
 				on update cascade on delete cascade,
 	token varchar(255) not null,
-	expires_at date not null
+	expires_at timestamp not null
 );

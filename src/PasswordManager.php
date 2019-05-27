@@ -136,7 +136,7 @@ class PasswordManager
         $dateTime = new DateTime();
 
         // Convert to ISO8601 format.
-        return $dateTime->format('Y-m-d H:i');
+        return $dateTime->format('Y-m-d H:i:s');
     }
 
     /**
@@ -150,6 +150,6 @@ class PasswordManager
     {
         $dateTime = new DateTime($this->getDateTime());
         $dateTime->modify('+1 hour');
-        return $dateTime->format('Y-m-d H:i');
+        return $dateTime->format('Y-m-d H:i:s');
     }
 }

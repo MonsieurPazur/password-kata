@@ -82,7 +82,7 @@ class PasswordManagerTest extends TestCase
     /**
      * Tests storing user (with proper password) in database.
      */
-    public function testStoreUserInDatabase()
+    public function testStoreUserInDatabase(): void
     {
         // We expect generator to create secure salted password.
         $this->passwordGenerator->expects($this->once())
@@ -110,7 +110,7 @@ class PasswordManagerTest extends TestCase
     /**
      * Tests getting user from database and validating his password.
      */
-    public function testValidateUserFromDatabase()
+    public function testValidateUserFromDatabase(): void
     {
         // We expect getting user by his email.
         $this->database->expects($this->once())
@@ -152,7 +152,7 @@ class PasswordManagerTest extends TestCase
      * @throws ReflectionException
      * @throws Exception
      */
-    public function testSendingResetEmail()
+    public function testSendingResetEmail(): void
     {
         // Mocking getDateTime() method.
         $manager = $this->getMockBuilder(PasswordManager::class)
@@ -164,8 +164,7 @@ class PasswordManagerTest extends TestCase
             ])
             ->setMethods(['getDateTime'])
             ->getMock();
-        $manager->expects($this->any())
-            ->method('getDateTime')
+        $manager->method('getDateTime')
             ->willReturn('2019-05-23 14:15');
 
         // Mocking token generation.

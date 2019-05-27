@@ -102,7 +102,7 @@ class PasswordManager
      *
      * @throws Exception
      */
-    public function sendResetEmail(string $email)
+    public function sendResetEmail(string $email): void
     {
         $token = $this->tokenGenerator->get();
         $expiresAt = $this->getResetEmailTokenExpiresAt();

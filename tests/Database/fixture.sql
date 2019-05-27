@@ -21,4 +21,3 @@ create table user_validation_tokens
 	token varchar(255) not null,
 	expires_at date not null
 );
-

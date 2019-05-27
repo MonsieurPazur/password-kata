@@ -26,7 +26,7 @@ class PasswordManagerDatabaseTest extends TestCase
     /**
      * @var string test database connection credentials
      */
-    const DATABASE_DSN = 'host=localhost dbname=test user=michal password=password';
+    public const DATABASE_DSN = 'host=localhost dbname=test user=michal password=password';
 
     /**
      * @var DatabaseInterface $database test database that we operate on
@@ -86,7 +86,7 @@ class PasswordManagerDatabaseTest extends TestCase
     /**
      * Tests storing user (with proper password) in database.
      */
-    public function testStoreUserInDatabase()
+    public function testStoreUserInDatabase(): void
     {
         // We expect generator to create secure salted password.
         $this->passwordGenerator->expects($this->once())
@@ -110,7 +110,7 @@ class PasswordManagerDatabaseTest extends TestCase
     /**
      * Creates schema for database.
      */
-    private function setUpDatabaseFixture()
+    private function setUpDatabaseFixture(): void
     {
         $fixture = file_get_contents(__DIR__ . '/Database/fixture.sql');
         $this->database->query($fixture);

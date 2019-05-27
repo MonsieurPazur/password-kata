@@ -13,7 +13,7 @@ namespace App\Email;
  */
 class EmailService
 {
-    const EVENT_RESET_EMAIL = 'reset_email';
+    public const EVENT_RESET_EMAIL = 'reset_email';
 
     /**
      * Sends email with given message to certain email address.

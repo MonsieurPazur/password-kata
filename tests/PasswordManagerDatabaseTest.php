@@ -62,6 +62,7 @@ class PasswordManagerDatabaseTest extends TestCase
     protected function setUp(): void
     {
         $this->database = new TestPostgreSQLDatabase(self::DATABASE_DSN);
+        $this->cleanUpDatabase();
         $this->setUpDatabaseFixture();
 
         $this->passwordGenerator = $this->getMockBuilder(PasswordGeneratorInterface::class)
@@ -167,6 +168,23 @@ class PasswordManagerDatabaseTest extends TestCase
         ];
 
         $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * Tears down all changes made on database by dropping all used tables.
+     */
+    protected function tearDown(): void
+    {
+        $this->cleanUpDatabase();
+    }
+
+    /**
+     * Clears database, removes all used tables.
+     */
+    private function cleanUpDatabase(): void
+    {
+        $cleanUp = file_get_contents(__DIR__ . '/Database/cleanup.sql');
+        $this->database->query($cleanUp);
     }
 
     /**
